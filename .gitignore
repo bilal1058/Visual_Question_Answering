@@ -1,0 +1,54 @@
+# Datasets & Large Archives
+datasets/
+Logistics/
+roboflow_zips/
+cache/
+*.zip
+*.tar
+*.gz
+
+# Training and Validation Outputs
+runs/
+val_results/
+
+# Reports and Documents (non-code project deliverables)
+*.pdf
+*.docx
+*.doc
+*Report*
+*report*
+
+# Environment and Secrets — NEVER commit API keys!
+.env
+.env.*
+!.env.example
+config/dataset_sources.json
+
+# Local Runtime Data & Logs
+data/
+*.db
+*.sqlite
+*.sqlite3
+logs/
+*.log
+latency_log.csv
+
+# Temporary Scratch Scripts & Experimental Checkpoints
+scratch/
+_remap_classes.py
+_remove_kettle.py
+yolo26n.pt
+
+# Python Caches & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# IDE & OS Artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

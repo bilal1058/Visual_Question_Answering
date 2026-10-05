@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual QA - AI Vision Cockpit</title>
+<link rel="stylesheet" href="/static/style.css?v=20260522-voice4">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+
+  <header class="command-rail">
+    <div class="rail-brand">
+      <div class="brand-emblem" aria-hidden="true">
+        <svg width="25" height="25" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 3 27 9.5v13L16 29 5 22.5v-13L16 3Z"/>
+          <path d="M16 3v9.5m0 7V29M5 9.5l11 6.5 11-6.5M5 22.5l11-6.5 11 6.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Visual QA</div>
+        <div class="brand-sub">AI Vision System</div>
+      </div>
+    </div>
+
+    <div class="rail-segment rail-active">
+      <span class="status-dot"></span>
+      <span>Active</span>
+    </div>
+
+    <div class="rail-meta">
+      <div class="rail-cell">
+        <span>Model</span>
+        <strong>Detector-8</strong>
+      </div>
+      <div class="rail-cell">
+        <span>Core</span>
+        <strong>VQA-1.0.0</strong>
+      </div>
+    </div>
+
+    <div class="rail-actions">
+      <button class="stream-btn" onclick="openStream()" title="Real-Time Detection">
+        <span class="stream-pulse"></span>
+        <span>Real-Time Detection</span>
+        <small>Live stream</small>
+      </button>
+    </div>
+  </header>
+
+  <div class="cockpit-grid">
+
+    <aside class="sensor-dock">
+      <section class="hud-card input-card">
+        <div class="hud-title">
+          <span class="hud-glyph">▣</span>
+          <span>Input Source</span>
+        </div>
+        <div class="source-buttons">
+          <button class="hud-btn hud-btn-primary is-active" onclick="pickFile()" id="uploadToggle" aria-pressed="true">
+            <span>⇧</span>
+            Upload
+          </button>
+          <button class="hud-btn" onclick="toggleCamera()" id="cameraToggle" aria-pressed="false">
+            <span>▣</span>
+            Camera
+          </button>
+        </div>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png" hidden onchange="onFilePicked(event)">
+        <div id="cameraBox" class="hidden camera-box">
+          <video id="cameraPreview" autoplay playsinline></video>
+          <button class="hud-btn hud-btn-primary capture-btn" onclick="captureCamera()">Capture Frame</button>
+        </div>
+        <div id="sourceInfo" class="source-chip hidden"></div>
+      </section>
+
+      <section class="hud-card threshold-card">
+        <div class="hud-title">
+          <span class="hud-glyph">↯</span>
+          <span>Confidence Threshold</span>
+        </div>
+        <div class="threshold-readout"><span id="confVal">25%</span></div>
+        <div class="slider-row">
+            <input type="range" class="slider" id="confSlider" min="10" max="100" step="5" value="25" oninput="updateConf(this.value)">
+        </div>
+        <div class="scale-row"><span>10%</span><span>100%</span></div>
+        <p class="micro-copy">Minimum confidence to show detections</p>
+      </section>
+
+      <section class="hud-card classes-card">
+        <div class="hud-title">
+          <span class="hud-glyph">✣</span>
+          <span>Detected Classes</span>
+        </div>
+        <div id="classesList" class="tag-list">
+          <span class="placeholder">No detections yet</span>
+        </div>
+      </section>
+
+      <section class="benchmark hud-card" id="benchmark">
+        <div class="benchmark-title">
+          <span class="hud-glyph">★</span>
+          Benchmark
+          <span class="benchmark-model" id="benchmarkScope">SCOPE CHECK</span>
+        </div>
+        <div class="benchmark-actions">
+          <button class="hud-btn" id="benchmarkBtn" onclick="runBenchmark()">▶ Run</button>
+
+        </div>
+        <div class="benchmark-progress hidden" id="benchmarkProgress">
+          <div class="benchmark-bar"><div class="benchmark-fill" id="benchmarkFill"></div></div>
+          <small id="benchmarkMsg"></small>
+        </div>
+        <div class="benchmark-table hidden" id="benchmarkTable">
+          <div class="bm-hdr"><span>Metric</span><span id="bmBaseLabel">Base</span><span id="bmTunedLabel">Tuned</span></div>
+          <div class="bm-note hidden" id="bmNote"></div>
+          <div class="bm-section-hdr">Accuracy</div>
+          <div class="bm-row"><span>mAP50</span><span class="bm-v" id="bm-b-mAP50"></span><span class="bm-v" id="bm-f-mAP50"></span></div>
+          <div class="bm-row"><span>mAP50-95</span><span class="bm-v" id="bm-b-mAP50_95"></span><span class="bm-v" id="bm-f-mAP50_95"></span></div>
+          <div class="bm-row"><span>Precision</span><span class="bm-v" id="bm-b-precision"></span><span class="bm-v" id="bm-f-precision"></span></div>
+          <div class="bm-row"><span>Recall</span><span class="bm-v" id="bm-b-recall"></span><span class="bm-v" id="bm-f-recall"></span></div>
+          <div class="bm-section-hdr">Speed</div>
+          <div class="bm-row"><span>Images</span><span class="bm-v" id="bm-b-images"></span><span class="bm-v" id="bm-f-images"></span></div>
+          <div class="bm-row"><span>Avg FPS</span><span class="bm-v" id="bm-b-fps"></span><span class="bm-v" id="bm-f-fps"></span></div>
+          <div class="bm-row"><span>Avg Latency</span><span class="bm-v" id="bm-b-lat"></span><span class="bm-v" id="bm-f-lat"></span></div>
+          <div class="bm-row"><span>p50 Latency</span><span class="bm-v" id="bm-b-p50"></span><span class="bm-v" id="bm-f-p50"></span></div>
+          <div class="bm-row"><span>p95 Latency</span><span class="bm-v" id="bm-b-p95"></span><span class="bm-v" id="bm-f-p95"></span></div>
+          <div class="bm-row"><span>p99 Latency</span><span class="bm-v" id="bm-b-p99"></span><span class="bm-v" id="bm-f-p99"></span></div>
+          <div class="bm-row"><span>Total Time</span><span class="bm-v" id="bm-b-time"></span><span class="bm-v" id="bm-f-time"></span></div>
+          <div class="bm-row"><span>Detections</span><span class="bm-v" id="bm-b-dets"></span><span class="bm-v" id="bm-f-dets"></span></div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="scene-cockpit">
+      <section class="scene-shell">
+        <div class="scene-head">
+          <div class="hud-title scene-title">
+            <span class="hud-glyph">✦</span>
+            <span>Scene Analysis</span>
+          </div>
+          <div class="scene-toolbar" aria-label="Scene tools">
+            <button class="tool-btn tool-secondary" id="zoomBtn" onclick="zoomScene()" title="Zoom image">Zoom</button>
+            <button class="tool-btn tool-secondary" onclick="fitScene()" title="Fit image">Fit</button>
+            <button class="tool-btn tool-secondary" id="boxesBtn" onclick="toggleBoxes()" title="Hide or show boxes">Boxes</button>
+            <button class="hud-btn hud-btn-primary analyze-inline" id="analyzeBtn" onclick="analyze()" disabled>
+              Analyze
+            </button>
+          </div>
+        </div>
+
+        <div class="scene-stage" id="stage">
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon">◇</div>
+            <div class="empty-text">Upload an image to begin</div>
+          </div>
+          <div id="imageContainer" class="image-container hidden">
+            <img id="mainImage" class="main-image" alt="Scene preview">
+          </div>
+          <div id="analyzeOverlay" class="analyze-overlay hidden">
+            <div class="spinner"></div>
+            <div class="analyze-text">Processing Vision Stack</div>
+          </div>
+        </div>
+
+        <div class="scene-metrics">
+          <div><strong id="objectsMetric">0</strong><span>Objects Detected</span></div>
+          <div><strong id="avgConfMetric">--</strong><span>Avg Confidence</span></div>
+          <div><strong id="thresholdMetric">25%</strong><span>Threshold</span></div>
+          <div class="mini-spectrum" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </section>
+
+      <div class="scene-status">
+        <span class="hint" id="sceneHint">Upload an image to begin.</span>
+      </div>
+
+      <section id="cropSection" class="hidden crop-section">
+        <div class="crop-section-title">Detections</div>
+        <div id="cropGrid" class="crop-grid"></div>
+      </section>
+    </main>
+
+    <aside class="ai-stack">
+      <div class="ai-header">
+        <span class="hud-glyph">✥</span>
+        <span>AI Visual Reasoning</span>
+      </div>
+
+      <section class="brain-card answer-card">
+        <div class="brain-title">
+          <span class="hud-glyph">◎</span>
+          VQA Answer
+        </div>
+        <div class="chat-log" id="chatLog">
+          <div class="empty-chat">Analyze a scene to start asking questions.</div>
+        </div>
+        <div class="templates" id="templates">
+          <button class="tmpl" onclick="useTemplate('How many objects are there?')">Count</button>
+          <button class="tmpl" onclick="useTemplate('What colors are present?')">Colors</button>
+          <button class="tmpl" onclick="useTemplate('Describe the scene.')">Describe</button>
+          <button class="tmpl" onclick="useTemplate('What is the largest object?')">Largest</button>
+          <button class="tmpl" onclick="useTemplate('Are there any safety risks in this image?')">Safety</button>
+          <button class="tmpl" onclick="useTemplate('Where are the main objects located?')">Navigation</button>
+          <button class="tmpl" onclick="useTemplate('What objects are present in the image?')">Objects</button>
+        </div>
+      </section>
+
+      <section class="brain-card input-terminal">
+        <div class="chat-input">
+          <input type="text" id="questionInput" placeholder="Ask a question about this image..." disabled>
+          <button id="voiceBtn" class="voice-btn" onclick="toggleVoiceInput()" disabled aria-label="Ask by voice" title="Ask by voice">Mic</button>
+          <button id="sendBtn" onclick="sendQuestion()" disabled aria-label="Send">➤</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="pipeline pipeline-full" id="pipeline">
+    <div class="pipeline-title">
+      <span class="hud-glyph">✦</span>
+      Pipeline Status
+    </div>
+    <div class="pipeline-steps">
+      <div class="pstep" id="ps-load">
+        <div class="picon">▰</div>
+        <div><span>Load</span><small id="ps-load-ms"></small></div>
+        <div class="pdot"></div>
+      </div>
+      <div class="pstep-sep"></div>
+      <div class="pstep" id="ps-detect">
+        <div class="picon">◎</div>
+        <div><span>Detect</span><small id="ps-detect-ms"></small></div>
+        <div class="pdot"></div>
+      </div>
+      <div class="pstep-sep"></div>
+      <div class="pstep" id="ps-reason">
+        <div class="picon">♢</div>
+        <div><span>Reason</span><small id="ps-reason-ms"></small></div>
+        <div class="pdot"></div>
+      </div>
+      <div class="pstep-sep"></div>
+      <div class="pstep" id="ps-total">
+        <div class="picon">◴</div>
+        <div><span>Total</span><small id="ps-total-ms"></small></div>
+        <div class="pdot pdot-accent"></div>
+      </div>
+    </div>
+    <div class="pipeline-track"><div class="pipeline-fill" id="pipelineFill"></div></div>
+  </section>
+</div>
+
+<div id="streamModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span>Live Camera Stream</span>
+      <button class="hud-btn" onclick="closeStream()">Close</button>
+    </div>
+    <img id="streamFrame" src="" alt="Live stream">
+    <video id="browserStreamFrame" class="hidden" autoplay playsinline muted></video>
+    <div id="streamInfo"></div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=20260522-voice4"></script>
+</body>
+</html>

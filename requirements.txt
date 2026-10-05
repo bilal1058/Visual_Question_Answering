@@ -1,0 +1,30 @@
+# Core
+ultralytics>=8.3.0
+opencv-python>=4.10.0
+numpy>=1.26.0
+PyYAML>=6.0.0
+
+# LLM
+groq>=0.9.0
+python-dotenv>=1.0.0
+scikit-learn>=1.4.0
+
+# Web API
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+websockets>=12.0
+pydantic>=2.0.0
+jinja2>=3.0.0
+
+# Data tools
+requests>=2.31.0
+tqdm>=4.66.0
+
+# Optional Roboflow import: python scripts/setup.py --roboflow PATH
+
+# Dataset expansion (optional - for setup_coco.py --oi-only)
+# fiftyone>=1.15.0
+
+# AMD GPU acceleration (optional - Windows only)
+# onnxruntime-directml>=1.24.0
+# onnx>=1.21.0

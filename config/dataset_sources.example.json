@@ -1,0 +1,4 @@
+{
+  "roboflow_export_url": "",
+  "notes": "Optional. Copy this to config/dataset_sources.json with a public Roboflow YOLOv8 zip URL, or put datasets/roboflow_export.zip in a release bundle."
+}
